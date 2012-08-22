@@ -1,0 +1,7 @@
+#header {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.7);
+    border-right: 1px solid rgba(48, 48, 48, 0.7);
+    border-bottom: 1px solid rgba(48, 48, 48, 0.7);
+}
+
