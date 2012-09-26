@@ -7,25 +7,27 @@ define(function (require, exports, module) {
     var EditorManager = brackets.getModule("editor/EditorManager"),
         ExtensionUtils = brackets.getModule("utils/ExtensionUtils");
     
-    var $header, headerCM, editor, visible = false;
+    var $header, headerCM, editor, ranges = [], visible = false;
     
-    function handleScroll() {
-        // TODO: have different providers for different file types
-        
-        // setTimeout?
+    function update() {
         // find the topmost visible line
-        // if header is visible and topmost visible line is the end of the range, scroll header out
-        // else if header is invisible and topmost visible line is a header, show and position the header
+        // if header is visible
+        //      if topmost visible line is the end of the current range or not in a range, scroll header out
+        //      if topmost visible line is in a range that's not the header's range, update header (with anim?)
+        // if header is invisible 
+        //      if topmost visible line is a header or in a range, show the header at position 0 and update its text
         
         // TODO: should header be opaque?
+        
+        // ***
     }
     
     function handleDocumentChange() {
-        // TODO: stupid, expensive--should only update if the visible text is edited
-        // (which generally shouldn't happen)
-        if (visible) {
-            headerCM.setText(editor.document.getText());
-        }
+        // update ranges based on change (brute force scan every time for now)
+        // TODO: have different providers for different file types
+        // ***
+        
+        update();
     }
     
     function hide() {
