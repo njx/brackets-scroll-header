@@ -1,7 +1,16 @@
-#header {
+#brackets-scroll-header {
     position: absolute;
-    background: rgba(255, 255, 255, 0.7);
-    border-right: 1px solid rgba(48, 48, 48, 0.7);
-    border-bottom: 1px solid rgba(48, 48, 48, 0.7);
+    background: #eee;
+    border-bottom: 1px solid #ddd;
+    left: 0;
+    top: 0;
+    width: 100%;
+    overflow: none;
+    
+    /* Sigh. */
+    z-index: 15;
 }
 
+#brackets-scroll-header .CodeMirror-gutter {
+    background: #eee;
+}
