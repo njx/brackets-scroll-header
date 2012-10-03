@@ -2,6 +2,8 @@ Experimental [Brackets](https://github.com/adobe/brackets) extension for showing
 indicating what context the top line is in as you scroll (e.g. function, media query, etc.). 
 **Not ready for real use yet** (very slow when you make edits).
 
+Requires the [nj/parse-mqs](https://github.com/adobe/brackets/tree/nj/parse-mqs) in Brackets.
+
 TODO:
 * make updates incremental
 * fix line number display in header
