@@ -17,10 +17,26 @@ define(function (require, exports, module) {
     
     var EditorManager = brackets.getModule("editor/EditorManager"),
         ExtensionUtils = brackets.getModule("utils/ExtensionUtils"),
-        JSUtils = brackets.getModule("language/JSUtils");
+        JSUtils = brackets.getModule("language/JSUtils"),
+        CSSUtils = brackets.getModule("language/CSSUtils");
     
-    var $header, headerCM, editor, ranges = [], curRange, visible = false;
+    var $header, headerCM, editor, providers = [], curProvider;
+    var ranges = [], curRange, visible = false;
     
+    function register(provider) {
+        providers.push(provider);
+    }
+    
+    function hide() {
+        $header.hide();
+        visible = false;
+    }
+    
+    function show() {
+        $header.show();
+        visible = true;
+    }
+
     function update() {
         // find the topmost visible line and which range it's in
         var editorTop = $(editor._codeMirror.getWrapperElement()).offset().top,
@@ -49,7 +65,7 @@ define(function (require, exports, module) {
             return;
         }
         
-        if (newRange != curRange) {
+        if (newRange !== curRange) {
             curRange = newRange;
             headerCM.setOption("mode", editor._codeMirror.getOption("mode"));
             headerCM.setOption("theme", editor._codeMirror.getOption("theme"));
@@ -75,31 +91,19 @@ define(function (require, exports, module) {
         }
     }
     
-    function handleDocumentChange() {
-        // update ranges based on change (brute force scan every time for now)
-        // TODO: incrementally update ranges. This is way too slow.
-        // TODO: have different providers for different file types
-        ranges = JSUtils.findAllMatchingFunctionsInText(editor.document.getText(), "*")
+    function handleDocumentChange(editor, changeList) {
+        // update ranges based on change
+        ranges = curProvider.updateHeaders(editor, changeList)
             .sort(function (a, b) {
                 return a.lineStart - b.lineStart;
             });
-        curRange = null;        
+        curRange = null;
         update();
-    }
-    
-    function hide() {
-        $header.hide();
-        visible = false;
-    }
-    
-    function show() {
-        $header.show();
-        visible = true;
     }
     
     function setEditor() {
         // We only deal with the outer editor (not inline editors).
-        var curEditor = EditorManager.getCurrentFullEditor();
+        var curEditor = EditorManager.getCurrentFullEditor(), i;
         if (curEditor === editor) {
             return;
         }
@@ -113,12 +117,51 @@ define(function (require, exports, module) {
         curRange = null;
         editor = curEditor;
         if (editor) {
-            $(editor).on("scroll", update);
-            $(editor.document).on("change", handleDocumentChange);
-            handleDocumentChange();
-            update();
+            for (i = 0; i < providers.length; i++) {
+                // TODO: how to handle mixed mode?
+                if (providers[i].canHandle(editor)) {
+                    curProvider = providers[i];
+                    break;
+                }
+            }
+            if (curProvider) {
+                $(editor).on("scroll", update);
+                $(editor.document).on("change", handleDocumentChange);
+                handleDocumentChange(editor);
+                update();
+            }
         }
     }
+
+    // JS provider (function definitions)
+    register({
+        canHandle: function (editor) {
+            return (editor.getModeForSelection() === "javascript");
+        },
+        updateHeaders: function (editor, changeList) {
+            // TODO: incrementally update ranges. This is way too slow.
+            return JSUtils.findAllMatchingFunctionsInText(editor.document.getText(), "*");
+        }
+    });
+    
+    // CSS provider (media queries--should we also do selectors?)
+    register({
+        canHandle: function (editor) {
+            return (editor.getModeForSelection() === "css");
+        },
+        updateHeaders: function (editor, changeList) {
+            // TODO: incrementally update ranges. This is way too slow.
+            var mediaQueries = CSSUtils.parse(editor.document.getText()).mediaQueries,
+                headers = [];
+            mediaQueries.forEach(function (mq) {
+                headers.push({
+                    lineStart: mq.ruleStartLine,
+                    lineEnd: mq.ruleEndLine
+                });
+            });
+            return headers;
+        }
+    });
     
     // Initialize extension
     ExtensionUtils.loadStyleSheet(module, "styles.css");
